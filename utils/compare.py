@@ -12,6 +12,7 @@ import os.path
 import re
 import numbers
 import argparse
+import math
 
 GEOMEAN_ROW = "Geomean difference"
 
@@ -381,6 +382,9 @@ def main():
         "--minimal-names", action="store_true", dest="minimal_names", default=False
     )
     parser.add_argument(
+        "--ignore-nan", action="store_true", dest="ignore_nan", default=False
+    )
+    parser.add_argument(
         "--no-abs-sort",
         action="store_true",
         dest="no_abs_sort",
@@ -491,6 +495,12 @@ def main():
         data = data[metrics]
 
     data = data.unstack(level=0)
+
+    # Filter out NaN values if option '--ignore-nan' is specified.
+    if config.ignore_nan:
+        for metric in data.columns.levels[0]:
+            data = data[data.apply(lambda d: all(not math.isnan(x) for x in d[metric]),
+                        axis=1)]
 
     for metric in data.columns.levels[0]:
         data = add_diff_column(metric, data, absolute_diff=config.absolute_diff)
